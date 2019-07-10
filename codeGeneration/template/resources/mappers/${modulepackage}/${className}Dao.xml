@@ -1,0 +1,139 @@
+<#include "/macro.include"/>
+<#assign sqlName = table.sqlName>
+<#assign className = table.className>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="${basepackage}.dao.${modulepackage}.${className}Dao">
+
+    <sql id="${table.getClassNameFirstLower()}Columns">
+        <@generateSelectFields/>
+    </sql>
+
+    <!-- 查询单条记录详情 -->
+    <select id="view" resultType="${className}">
+        SELECT
+            <include refid="${table.getClassNameFirstLower()}Columns"/>
+        FROM ${sqlName} a
+        WHERE <@generateWherePKFields/>
+    </select>
+
+    <!-- 查询集合 -->
+    <select id="findList" resultType="${className}" parameterType="${className}">
+        SELECT
+            <include refid="${table.getClassNameFirstLower()}Columns"/>
+        FROM ${sqlName} a
+        <where>
+            <!--例如：
+            <if test="userName != null and userName !=''">
+                AND a.user_name like '%'||<@jspEl3 'userName'/>||'%'
+            </if>
+            -->
+
+
+        </where>
+    </select>
+
+    <!-- 分页查询集合 -->
+    <select id="findListByPage" resultType="${className}" parameterType="${basepackage}.domain.common.Page">
+        SELECT
+            <include refid="${table.getClassNameFirstLower()}Columns"/>
+        FROM ${sqlName} a
+        <where>
+            <!--例如：
+            <if test="parameEntity.userName != null and parameEntity.userName !=''">
+                AND a.user_name like '%'||<@jspEl3 'parameEntity.userName'/>||'%'
+            </if>
+            -->
+
+
+        </where>
+    </select>
+
+    <!-- 新增数据 -->
+    <insert id="insert">
+        insert into ${sqlName}
+        (
+            <@generateDBFields/>
+            create_by,
+            create_date,
+            update_by,
+            update_date)
+        values(
+            <@generatePMFields/>
+            <@jspEl3 'createBy'/>,
+            <@jspEl3 'createDate'/>,
+            <@jspEl3 'updateBy'/>,
+            <@jspEl3 'updateDate'/>)
+    </insert>
+
+    <!-- 修改数据 -->
+    <update id="update">
+        UPDATE ${sqlName} SET
+            <@generateUpdateFields/>
+            update_by = <@jspEl3 'updateBy'/>,
+            update_date = <@jspEl3 'updateDate'/>
+        WHERE <@generateWherePKFields/>
+    </update>
+
+    <!-- 删除数据（物理删除） -->
+    <update id="delete">
+        DELETE FROM ${sqlName}
+        WHERE <@generateWherePKFields/>
+    </update>
+
+
+
+
+
+
+
+
+</mapper>
+
+
+<#macro generateSelectFields>
+    <#list table.columns as column>
+        a.${column.sqlName} as ${column.columnNameLower}<#if column_has_next>,</#if>
+    </#list>
+</#macro>
+
+
+<#macro generateWherePKFields>
+    <#list table.columns as column>
+        <#if column.pk>
+${column.sqlName} = <@jspEl3 '${column.columnNameLower}'/>
+        </#if>
+    </#list>
+</#macro>
+
+
+<#macro generateDBFields>
+    <#list table.columns as column>
+        <#if !column.pk>
+        <#if !column.isRemoveField(column.columnNameLower)>
+            ${column.sqlName},
+        </#if>
+        </#if>
+    </#list>
+</#macro>
+
+
+<#macro generatePMFields>
+    <#list table.columns as column>
+        <#if !column.pk>
+        <#if !column.isRemoveField(column.columnNameLower)>
+            <@jspEl3 '${column.columnNameLower}'/>,
+        </#if>
+        </#if>
+    </#list>
+</#macro>
+
+<#macro generateUpdateFields>
+    <#list table.columns as column>
+        <#if !column.pk>
+        <#if !column.isRemoveField(column.columnNameLower)>
+            ${column.sqlName} = <@jspEl3 '${column.columnNameLower}'/>,
+        </#if>
+        </#if>
+    </#list>
+</#macro>
